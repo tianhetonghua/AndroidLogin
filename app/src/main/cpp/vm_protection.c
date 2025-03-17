@@ -1,0 +1,284 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "vm_protection.h"
+
+// 全局变量定义
+char* vm_stack;
+int enc_flag[F_LEN] = { 0x46, 0x78, 0x5c, 0x7f, 0x76, 0x4a, 0x70, 0x5e, 0x73, 0x39,
+                        0x7f, 0x50, 0x19, 0x09, 0x15, 0x1e, 0x1c, 0x4d, 0x07, 0x1f,
+                        0x1b, 0x47, 0x5d, 0x1f, 0x4a, 0x13, 0x11, 0x0b, 0x1d, 0x36,
+                        0x14, 0x33, 0x64, 0x3e, 0x65, 0x7d };
+int username[F_LEN];
+
+// vm_code 指令数组
+unsigned char vm_code[] = {
+        // 操作码 0xf5: 读取 flag 到栈
+        0xf5,
+
+// flag[1] = 'L' 加密
+        0xf1, 0xe2, 0x1, 0x00, 0x00, 0x00,  // mov r1, [flag[1]] ('L')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1, 0x00, 0x00, 0x00,  // mov [flag[1]] ^ temp2[1] to vm_stack
+
+// flag[2] = 'A' 加密
+        0xf1, 0xe2, 0x2, 0x00, 0x00, 0x00,  // mov r1, [flag[2]] ('A')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x2, 0x00, 0x00, 0x00,  // mov [flag[2]] ^ temp2[2] to vm_stack
+
+// flag[3] = 'G' 加密
+        0xf1, 0xe2, 0x3, 0x00, 0x00, 0x00,  // mov r1, [flag[3]] ('G')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x3, 0x00, 0x00, 0x00,  // mov [flag[3]] ^ temp2[3] to vm_stack
+
+// flag[4] = '{' 加密
+        0xf1, 0xe2, 0x4, 0x00, 0x00, 0x00,  // mov r1, [flag[4]] ('{')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x4, 0x00, 0x00, 0x00,  // mov [flag[4]] ^ temp2[4] to vm_stack
+
+// flag[5] = 'S' 加密
+        0xf1, 0xe2, 0x5, 0x00, 0x00, 0x00,  // mov r1, [flag[5]] ('S')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x5, 0x00, 0x00, 0x00,  // mov [flag[5]] ^ temp2[5] to vm_stack
+
+// flag[6] = 'Y' 加密
+        0xf1, 0xe2, 0x6, 0x00, 0x00, 0x00,  // mov r1, [flag[6]] ('Y')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x6, 0x00, 0x00, 0x00,  // mov [flag[6]] ^ temp2[6] to vm_stack
+
+// flag[7] = 'E' 加密
+        0xf1, 0xe2, 0x7, 0x00, 0x00, 0x00,  // mov r1, [flag[7]] ('E')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x7, 0x00, 0x00, 0x00,  // mov [flag[7]] ^ temp2[7] to vm_stack
+
+// flag[8] = 'H' 加密
+        0xf1, 0xe2, 0x8, 0x00, 0x00, 0x00,  // mov r1, [flag[8]] ('H')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x8, 0x00, 0x00, 0x00,  // mov [flag[8]] ^ temp2[8] to vm_stack
+
+// flag[9] = '8' 加密
+        0xf1, 0xe2, 0x9, 0x00, 0x00, 0x00,  // mov r1, [flag[9]] ('8')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x9, 0x00, 0x00, 0x00,  // mov [flag[9]] ^ temp2[9] to vm_stack
+
+// flag[10] = '4' 加密
+        0xf1, 0xe2, 0xa, 0x00, 0x00, 0x00,  // mov r1, [flag[10]] ('4')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0xa, 0x00, 0x00, 0x00,  // mov [flag[10]] ^ temp2[10] to vm_stack
+
+// flag[11] = 'J' 加密
+        0xf1, 0xe2, 0xb, 0x00, 0x00, 0x00,  // mov r1, [flag[11]] ('J')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0xb, 0x00, 0x00, 0x00,  // mov [flag[11]] ^ temp2[11] to vm_stack
+
+// flag[12] = '-' 加密
+        0xf1, 0xe2, 0xc, 0x00, 0x00, 0x00,  // mov r1, [flag[12]] ('-')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0xc, 0x00, 0x00, 0x00,  // mov [flag[12]] ^ temp2[12] to vm_stack
+
+// flag[13] = 'b' 加密
+        0xf1, 0xe2, 0xd, 0x00, 0x00, 0x00,  // mov r1, [flag[13]] ('b')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0xd, 0x00, 0x00, 0x00,  // mov [flag[13]] ^ temp2[13] to vm_stack
+
+// flag[14] = 's' 加密
+        0xf1, 0xe2, 0xe, 0x00, 0x00, 0x00,  // mov r1, [flag[14]] ('s')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0xe, 0x00, 0x00, 0x00,  // mov [flag[14]] ^ temp2[14] to vm_stack
+
+// flag[15] = 'h' 加密
+        0xf1, 0xe2, 0xf, 0x00, 0x00, 0x00,  // mov r1, [flag[15]] ('h')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0xf, 0x00, 0x00, 0x00,  // mov [flag[15]] ^ temp2[15] to vm_stack
+
+// flag[16] = 'i' 加密
+        0xf1, 0xe2, 0x10, 0x00, 0x00, 0x00,  // mov r1, [flag[16]] ('i')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x10, 0x00, 0x00, 0x00,  // mov [flag[16]] ^ temp2[16] to vm_stack
+
+// flag[17] = '4' 加密
+        0xf1, 0xe2, 0x11, 0x00, 0x00, 0x00,  // mov r1, [flag[17]] ('4')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x11, 0x00, 0x00, 0x00,  // mov [flag[17]] ^ temp2[17] to vm_stack
+
+// flag[18] = '8' 加密
+        0xf1, 0xe2, 0x12, 0x00, 0x00, 0x00,  // mov r1, [flag[18]] ('8')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x12, 0x00, 0x00, 0x00,  // mov [flag[18]] ^ temp2[18] to vm_stack
+
+// flag[19] = 'j' 加密
+        0xf1, 0xe2, 0x13, 0x00, 0x00, 0x00,  // mov r1, [flag[19]] ('j')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x13, 0x00, 0x00, 0x00,  // mov [flag[19]] ^ temp2[19] to vm_stack
+
+// flag[20] = 'a' 加密
+        0xf1, 0xe2, 0x14, 0x00, 0x00, 0x00,  // mov r1, [flag[20]] ('a')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x14, 0x00, 0x00, 0x00,  // mov [flag[20]] ^ temp2[20] to vm_stack
+
+// flag[21] = '8' 加密
+        0xf1, 0xe2, 0x15, 0x00, 0x00, 0x00,  // mov r1, [flag[21]] ('8')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x15, 0x00, 0x00, 0x00,  // mov [flag[21]] ^ temp2[21] to vm_stack
+
+// flag[22] = '-' 加密
+        0xf1, 0xe2, 0x16, 0x00, 0x00, 0x00,  // mov r1, [flag[22]] ('-')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x16, 0x00, 0x00, 0x00,  // mov [flag[22]] ^ temp2[22] to vm_stack
+
+// flag[23] = '6' 加密
+        0xf1, 0xe2, 0x17, 0x00, 0x00, 0x00,  // mov r1, [flag[23]] ('6')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x17, 0x00, 0x00, 0x00,  // mov [flag[23]] ^ temp2[23] to vm_stack
+
+// flag[24] = '2' 加密
+        0xf1, 0xe2, 0x18, 0x00, 0x00, 0x00,  // mov r1, [flag[24]] ('2')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x18, 0x00, 0x00, 0x00,  // mov [flag[24]] ^ temp2[24] to vm_stack
+
+// flag[25] = 'g' 加密
+        0xf1, 0xe2, 0x19, 0x00, 0x00, 0x00,  // mov r1, [flag[25]] ('g')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x19, 0x00, 0x00, 0x00,  // mov [flag[25]] ^ temp2[25] to vm_stack
+
+// flag[26] = 'h' 加密
+        0xf1, 0xe2, 0x1a, 0x00, 0x00, 0x00,  // mov r1, [flag[26]] ('h')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1a, 0x00, 0x00, 0x00,  // mov [flag[26]] ^ temp2[26] to vm_stack
+
+// flag[27] = 'd' 加密
+        0xf1, 0xe2, 0x1b, 0x00, 0x00, 0x00,  // mov r1, [flag[27]] ('d')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1b, 0x00, 0x00, 0x00,  // mov [flag[27]] ^ temp2[27] to vm_stack
+
+// flag[28] = 'N' 加密
+        0xf1, 0xe2, 0x1c, 0x00, 0x00, 0x00,  // mov r1, [flag[28]] ('N')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1c, 0x00, 0x00, 0x00,  // mov [flag[28]] ^ temp2[28] to vm_stack
+
+// flag[29] = 'F' 加密
+        0xf1, 0xe2, 0x1d, 0x00, 0x00, 0x00,  // mov r1, [flag[29]] ('F')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1d, 0x00, 0x00, 0x00,  // mov [flag[29]] ^ temp2[29] to vm_stack
+
+// flag[30] = 'U' 加密
+        0xf1, 0xe2, 0x1e, 0x00, 0x00, 0x00,  // mov r1, [flag[30]] ('U')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1e, 0x00, 0x00, 0x00,  // mov [flag[30]] ^ temp2[30] to vm_stack
+
+// flag[31] = '8' 加密
+        0xf1, 0xe2, 0x1f, 0x00, 0x00, 0x00,  // mov r1, [flag[31]] ('8')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x1f, 0x00, 0x00, 0x00,  // mov [flag[31]] ^ temp2[31] to vm_stack
+
+// flag[32] = '9' 加密
+        0xf1, 0xe2, 0x20, 0x00, 0x00, 0x00,  // mov r1, [flag[32]] ('9')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x20, 0x00, 0x00, 0x00,  // mov [flag[32]] ^ temp2[32] to vm_stack
+
+// flag[33] = '0' 加密
+        0xf1, 0xe2, 0x21, 0x00, 0x00, 0x00,  // mov r1, [flag[33]] ('0')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x21, 0x00, 0x00, 0x00,  // mov [flag[33]] ^ temp2[33] to vm_stack
+
+// flag[34] = '}' 加密
+        0xf1, 0xe2, 0x22, 0x00, 0x00, 0x00,  // mov r1, [flag[34]] ('}')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x22, 0x00, 0x00, 0x00,  // mov [flag[34]] ^ temp2[34] to vm_stack
+
+        0xf1, 0xe2, 0x23, 0x00, 0x00, 0x00,  // mov r1, [flag[0]] ('F')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x23, 0x00, 0x00, 0x00,  // mov [flag[0]] ^ temp2[0] to vm_stack
+
+        0xf1, 0xe2, 0x24, 0x00, 0x00, 0x00,  // mov r1, [flag[0]] ('F')
+        0xf2,  // Xor 操作
+        0xf1, 0xe4, 0x24, 0x00, 0x00, 0x00,  // mov [flag[0]] ^ temp2[0] to vm_stack
+
+        0xf4                                  // 结束指令
+};
+
+// 函数实现
+void generate_username_array(const char* username_input, int* output_array) {
+    int username_length = strlen(username_input);
+    for (int i = 0; i < F_LEN; i++) {
+        output_array[i] = (int)(unsigned char)username_input[i % username_length];
+        printf("generate_username_array - username[%d]: %d\n", i, output_array[i]);
+    }
+}
+
+void func1(vm_cpu* cpu_ptr) {
+    vm_cpu* cpu = (vm_cpu*)cpu_ptr;
+    int* offset = (int*)(cpu->eip - 4);
+    int temp = cpu->r1 ^ cpu->r2;
+    cpu->r1 = temp ^ username[*offset - 1];
+    cpu->eip += 1;
+}
+
+void func2(vm_cpu* cpu_ptr) {
+    vm_cpu* cpu = (vm_cpu*)cpu_ptr;
+    scanf("%36s", vm_stack);
+    cpu->eip += 1;
+}
+
+void func3(vm_cpu* cpu_ptr) {
+    vm_cpu* cpu = (vm_cpu*)cpu_ptr;
+    unsigned char* res = cpu->eip + 1;
+    int* offset = (int*)(cpu->eip + 2);
+    switch (*res) {
+        case 0xe1: cpu->r1 = vm_stack[*offset]; break;
+        case 0xe2: cpu->r2 = vm_stack[*offset]; break;
+        case 0xe3: cpu->r3 = vm_stack[*offset]; break;
+        case 0xe4: vm_stack[*offset] = cpu->r1; break;
+    }
+    cpu->eip += 6;
+}
+
+void vm_init(vm_cpu* cpu) {
+    cpu->r1 = 0x46;
+    cpu->r2 = 0;
+    cpu->r3 = 0;
+    cpu->eip = vm_code;
+
+    cpu->op_list[0].opcode = 0xf1;
+    cpu->op_list[0].handle = (void (*)(void*))func3;
+
+    cpu->op_list[1].opcode = 0xf2;
+    cpu->op_list[1].handle = (void (*)(void*))func1;
+
+    cpu->op_list[2].opcode = 0xf5;
+    cpu->op_list[2].handle = (void (*)(void*))func2;
+
+    vm_stack = (char*)malloc(0x512);
+    if (vm_stack == NULL) {
+        fprintf(stderr, "Failed to allocate memory for vm_stack\n");
+        exit(1);
+    }
+    memset(vm_stack, 0, 0x512);
+}
+
+void vm_dispatcher(vm_cpu* cpu) {
+    for (int i = 0; i < OPCODE_N; i++) {
+        if (*cpu->eip == cpu->op_list[i].opcode) {
+            cpu->op_list[i].handle(cpu);
+            return;
+        }
+    }
+    exit(1);
+}
+
+void vm_start(vm_cpu* cpu) {
+    while (*cpu->eip != 0xf4) {
+        vm_dispatcher(cpu);
+    }
+}
+
+void check() {
+    for (int i = 0; i < F_LEN; i++) {
+        if ((int)vm_stack[i] != enc_flag[i]) {
+            puts("error");
+            exit(0);
+        }
+    }
+    puts("right");
+    exit(0);
+}
